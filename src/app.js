@@ -9,8 +9,19 @@ import quoteRoutes from "./routes/quote.routes.js";
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:8000",
+  "http://localhost:12000",
+];
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:12000",
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

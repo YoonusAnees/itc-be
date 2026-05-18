@@ -10,7 +10,7 @@ import quoteRoutes from "./routes/quote.routes.js";
 const app = express();
 
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:8000",
+  origin: process.env.CLIENT_URL || "http://localhost:12000",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

@@ -15,7 +15,7 @@ const app = express();
 
 const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:8000",
-  "http://localhost:12000",
+  "https://itc-gold-house.vercel.app",
 ];
 
 const corsOptions = {

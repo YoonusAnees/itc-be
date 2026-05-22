@@ -14,7 +14,7 @@ import quoteRoutes from "./routes/quote.routes.js";
 const app = express();
 
 const allowedOrigins = [
-  process.env.CLIENT_URL || "http://localhost:8000",
+  process.env.CLIENT_URL || "http://localhost:3000",
   "https://itc-gold-house.vercel.app",
 ];
 

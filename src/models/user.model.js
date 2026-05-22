@@ -23,6 +23,13 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "customer"],
       default: "customer",
     },
+    refreshTokens: [
+      {
+        token: String,
+        createdAt: { type: Date, default: Date.now },
+        expiresAt: Date,
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -3,35 +3,29 @@ import User from "../models/user.model.js";
 
 export const protect = async (req, res, next) => {
   try {
-    const token = req.headers.authorization;
+    // Prefer cookie-based token for browser clients
+    const cookieToken = req.cookies?.accessToken;
+    let token = null;
+
+    if (cookieToken) token = cookieToken;
+    else if (req.headers.authorization) token = req.headers.authorization.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "No token provided",
-      });
+      return res.status(401).json({ success: false, message: "No token provided" });
     }
 
-    const splitToken = token.split(" ")[1];
-
-    const decoded = jwt.verify(splitToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(401).json({ success: false, message: "User not found" });
     }
 
     req.user = user;
 
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: "Unauthorized",
-    });
+    res.status(401).json({ success: false, message: "Unauthorized" });
   }
 };

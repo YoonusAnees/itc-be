@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
-import { generateToken } from "../utils/generateToken.js";
+import { generateAccessToken, generateRefreshToken, refreshTokenExpiryMs } from "../utils/generateTokens.js";
 
-export const registerService = async ({ name, email, password , role }) => {
+export const registerService = async ({ name, email, password, role }) => {
   const exists = await User.findOne({ email });
 
   if (exists) {
@@ -14,16 +14,22 @@ export const registerService = async ({ name, email, password , role }) => {
   const user = await User.create({
     name,
     email,
-    password: hashedPassword,    
+    password: hashedPassword,
     role: role || "customer",
-
   });
 
-  const token = generateToken(user._id);
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken();
+  const expiresAt = new Date(Date.now() + refreshTokenExpiryMs());
+
+  user.refreshTokens.push({ token: refreshToken, expiresAt });
+  await user.save();
 
   return {
     user,
-    token,
+    accessToken,
+    refreshToken,
+    refreshExpiresAt: expiresAt,
   };
 };
 
@@ -40,11 +46,44 @@ export const loginService = async ({ email, password }) => {
     throw new Error("Invalid credentials");
   }
 
-  const token = generateToken(user._id);
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken();
+  const expiresAt = new Date(Date.now() + refreshTokenExpiryMs());
+
+  user.refreshTokens.push({ token: refreshToken, expiresAt });
+  await user.save();
 
   return {
     user,
-    token,
+    accessToken,
+    refreshToken,
+    refreshExpiresAt: expiresAt,
   };
 };
 
+export const rotateRefreshToken = async (oldToken) => {
+  const user = await User.findOne({ "refreshTokens.token": oldToken });
+  if (!user) throw new Error("Invalid refresh token");
+
+  // remove the old token
+  user.refreshTokens = user.refreshTokens.filter((t) => t.token !== oldToken);
+
+  // create a new refresh token
+  const newRefreshToken = generateRefreshToken();
+  const expiresAt = new Date(Date.now() + refreshTokenExpiryMs());
+  user.refreshTokens.push({ token: newRefreshToken, expiresAt });
+
+  await user.save();
+
+  const accessToken = generateAccessToken(user._id);
+
+  return { user, accessToken, refreshToken: newRefreshToken, refreshExpiresAt: expiresAt };
+};
+
+export const revokeRefreshToken = async (token) => {
+  const user = await User.findOne({ "refreshTokens.token": token });
+  if (!user) return;
+
+  user.refreshTokens = user.refreshTokens.filter((t) => t.token !== token);
+  await user.save();
+};
